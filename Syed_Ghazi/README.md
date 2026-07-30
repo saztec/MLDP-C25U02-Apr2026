@@ -1,212 +1,295 @@
-# MLDP-C25U02-Apr2026
+# Life Expectancy Prediction
 
-**Machine Learning for Developers (CAI2C08) — Term 2 Project Repository**
-Diploma in Applied Artificial Intelligence · School of Informatics & IT · Temasek Polytechnic · AY2026/2027 April Semester
-
-This repository is your working space for the **individual** MLDP project. Read this README in full before you start, and use your **own branch** for all your work (see [GitHub Workflow](#github-workflow) below).
+**Machine Learning for Developers (CAI2C08) — Individual Project**
+Predicting a country's **life expectancy (in years)** from its health, economic and social indicators, using scikit-learn, and deploying the model as an interactive Streamlit web app.
 
 ---
 
-## 1. The Scenario
+## 1. Problem Statement
 
-> Imagine yourself as the **founder of a start-up**. Your mission is to use machine learning to solve a real-world problem and convince a potential **investor (your tutor)** of your solution.
+Health ministries, NGOs and global-health planners need to understand **what drives life expectancy** and to **estimate it** for a country from measurable indicators, so they can decide where to invest limited resources (education, immunisation, health spending, disease control).
 
-You will **develop** a machine learning web app and **present** it convincingly. This simulates a real-world setting to prepare you for your Major Project, Student Internship Programme, and future industry roles — where you must communicate solutions to stakeholders, justify decisions with evidence, and adapt to changing business needs.
+This project frames that need as a **supervised regression problem**:
 
-### Objectives
-By completing this project, you will:
-- identify problems suitable for machine learning;
-- perform exploratory data analysis (EDA) using Python libraries;
-- apply machine learning concepts and methods to write solutions in Python;
-- deploy solutions to an online platform using Python and **Streamlit**;
-- communicate your results clearly and respond to business challenges.
+> Given a country's health, economic and social indicators for a year, predict its **life expectancy in years**.
+
+The target (`Life expectancy`) is a continuous number, which is why this is **regression** (predicting a value) rather than classification (predicting a category). The business value is twofold: an **explanatory** view (which factors matter most) and a **predictive** tool (estimate life expectancy for a new profile), delivered through a web app a non-technical stakeholder can use.
 
 ---
 
-## 2. Weighting & Deadlines
+## 2. The Data
 
-This project contributes **70% to your overall subject grade** (total mark of 70). It is an **INDIVIDUAL** project with two components:
+**Source:** [Life Expectancy (WHO) — Kaggle](https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who) — a compilation of real World Health Organization and United Nations data.
 
-| # | Deliverable | Weight | Submit to | Due Date |
-|---|-------------|:------:|-----------|----------|
-| 1 | **Program Code** | **50%** | TP-LMS | **31 Jul (Fri), 5:00 pm** |
-| 2 | **Demo & Presentation** (slides) | **20%** | TP-LMS / In classroom (**business attire**) | **Slides: 17 Aug (Mon), 5:00 pm** |
+| Property | Value |
+|---|---|
+| Records | 2,938 (country-year rows) |
+| Countries | 193 |
+| Years | 2000–2015 |
+| Columns | 22 (1 target, 21 candidate features) |
+| Target | `Life expectancy` (years, 36.3 – 89.0) |
+| Task | Regression |
 
-> ⚠️ **Late submission** penalties (deduction from the absolute mark): **< 1 day → −10%**, **≥ 1 and < 2 days → −20%**, **≥ 2 days → 0 marks**. "Day" **includes** non-working days (Sat, Sun, public holidays). **Laptop issues are not accepted** as a reason for extension — back up your work (this repo is part of that backup).
+The data is **real, not synthetically generated**, which is a hard requirement of the brief (see Section 8 for the dataset that was rejected for failing this).
 
----
+### Distribution of the target
 
-## 3. The Task
+![Distribution of life expectancy](images/target_distribution.png)
 
-### 3.1 Identify a practical problem
-Choose a topic that interests you and is a **practical real-world problem** addressable by **supervised** machine learning — e.g. finance, healthcare, marketing, logistics, services, manufacturing, sustainability, or cybersecurity.
-
-### 3.2 Source & analyze data
-- Find a **public dataset with at least 200 rows** (e.g. [UCI](https://archive.ics.uci.edu/ml/index.php), [Kaggle](https://www.kaggle.com), [HuggingFace](https://huggingface.co), [data.gov.sg](https://data.gov.sg), [Google Dataset Search](https://datasetsearch.research.google.com)).
-- Dataset must have **multiple columns** for feature engineering / selection.
-- Identify the target column(s) and determine whether it is a **regression** or **classification** task.
-- **Do NOT use**: unstructured data (paragraphs of text), images, or **solely time-series** data (e.g. crypto / stock prices). The dataset must **not be synthetically generated**.
-- Perform **EDA** to understand the data and its relevance to your problem.
-- **Get your tutor's approval at Project Checkpoint 1** before building your solution.
-- Make sure the scope is achievable by the deadline.
-
-### 3.3 Develop your ML solution (Python 3)
-- Implement models using **scikit-learn ONLY** — no other modelling libraries.
-- Document your code, including the **rationale** for data preprocessing / feature engineering **and** algorithm / model selection.
-- **Justify** your choice of evaluation metric(s).
-- **Experiment with different models** (incl. feature engineering / selection), then tune the best model using **`RandomizedSearchCV` only**, with **no more than 3 values per hyperparameter**. Justify your final model based on evidence and business needs; state any assumptions.
-- Show **all steps** used to train and evaluate your models, with outputs (graphs, logs).
-
-### 3.4 Deploy your solution
-- Build a **Streamlit** web app that is aesthetically appealing, user-friendly, and appropriate for the target audience.
-- Prepare a Word document with the **web app link** and **three screenshots** of its functionality.
-
-### 3.5 Pitch your solution
-- Create a concise, compelling **pitch deck** (problem, key approach, results / business impact).
-- **Present & demo** your web app to the investor (lecturer) as a compelling product.
-- **Respond to questions and a case challenge** — handle concerns, overcome constraints, assess alternatives.
+Life expectancy is **left-skewed**: most country-years sit in the 70–75 year range, with a tail of lower values from countries affected by conflict, poverty or high disease burden.
 
 ---
 
-## 4. What to Submit
+## 3. What Shaped the Data (Cleaning & Preparation)
 
-### Submission 1 — Program Code (50%) — *due 31 Jul*
-A single **`.zip`** (not `.rar`) named `<TP-LMS Name>_<Student ID>.zip` (e.g. `Aiman Tan_2401234A.zip`) containing:
+The dataset is real, so it is **messy** — and dealing with that mess is where most of the modelling decisions were made.
 
-1. **Jupyter notebook (`.ipynb`)** — code, documentation (outputs, graphs, training logs, comments), analysis & justification.
-2. **Streamlit app code (`.py`)**.
-3. **Word document (`.docx`, use the given template)** with:
-   - Declaration of Originality (cite any Gen AI use — this does not affect your marks);
-   - Source of dataset; **GitHub link**; **Streamlit link**;
-   - **3 screenshots**: (1) before any option is selected, (2) after an option is selected (shows a prediction), (3) after a different option is selected (shows a **changed** prediction);
-   - Screenshots of version control / development logs (if applicable).
+**Missing values.** Several columns have substantial gaps:
 
-> Only the **latest** submission is graded. If resubmitting, re-zip **all** components. Upload early; do **not** submit an empty or corrupted zip.
+| Column | Missing | Handling |
+|---|---|---|
+| Population | 652 | dropped (also ~0 correlation) |
+| Hepatitis B | 553 | dropped (redundant with other vaccines) |
+| GDP | 448 | imputed (median) |
+| Total expenditure | 226 | imputed (median) |
+| Alcohol | 194 | imputed (median) |
+| Income composition | 167 | imputed (median) |
+| Schooling | 163 | imputed (median) |
+| Life expectancy (target) | 10 | **rows dropped** (never impute the target) |
 
-### Submission 2 — Demo & Presentation Slides (20%) — *slides due 17 Aug*
-A **`.pptx`** with a **maximum of 10 slides** (excluding cover & references). Suggested content: (1) Problem & Dataset, (2) Web App Demonstration, (3) Key Approach / Methods / Results & Impact, (4) Conclusion & Next Steps, (5) References. You have **up to 3 minutes** to pitch, followed by Q&A and a case challenge. (See the **MAPS framework** and Microsoft Presenter Coach links in TP-LMS to prepare.)
+**Column-name whitespace.** The raw headers contain stray spaces (e.g. `" Life expectancy "`), which are stripped with `df.columns.str.strip()` — without this, referencing `df['Life expectancy']` raises a `KeyError`.
 
----
+**Encoding.** The only categorical feature, `Status` (Developing / Developed), is one-hot encoded with `pd.get_dummies(drop_first=True)`, producing a single `Status_Developing` column.
 
-## 5. How You Are Scored
+**Two competing strategies for missing data** — and this became the core "iteration" of the project:
 
-All percentages below are of your **overall subject grade**. Components sum to the project's **70%**.
+- **Baseline:** drop every row with any missing value → **1,649 rows**.
+- **Iteration 1:** impute missing feature values with the column median → **2,928 rows** (≈1,300 more).
 
-### (1) Program Code — 50%
+### How the features relate to the target
 
-| Component | Sub-criteria | Weight | What earns top marks |
-|-----------|--------------|:------:|----------------------|
-| **Code Explanation & Documentation** | Code Clarity & Documentation | **4%** | Organized, readable code; **all** key steps clearly documented with the *why* and meaningful comments |
-| | Version Control / Development Logs | **4%** | **Clear, observable iterative development** (e.g. commit history / logs) |
-| **Iterative Model Development** *(34% total)* | Exploratory Data Analysis (EDA) & Interpretation | **8%** | Insightful, clearly-labelled visualisations; trends/outliers interpreted with **business-relevant** implications for modelling |
-| | Model Diversity, Comparison & Selection Rationale | **8%** | **Two or more** distinct algorithms; test results **vs baseline**; quantitative + qualitative comparison; clear selection rationale |
-| | Feature Engineering / Selection with Rationale | **10%** | Meaningful feature engineering/selection with changes clearly **explained** |
-| | Hyperparameter Tuning | **4%** | Tune **two** hyperparameters; comparison logs/tables; impact explained; reproducible setup (`RandomizedSearchCV`) |
-| | Evaluation Metric Selection, Interpretation & Justification | **4%** | Task-appropriate metric with a **clear link to the business outcome** |
-| **Design of App & Deployment** *(8% total)* | Correct prediction without error | **2%** | Correct outputs for all tested cases; no crashes; input validation & user-facing error messages |
-| | Interactive application | **6%** | Highly interactive, responsive, user-friendly; appealing visuals; labels suitable for the target audience |
+![Feature correlations with life expectancy](images/correlations.png)
 
-### (2) Demo & Presentation — 20%
+The correlations make real-world sense and confirm the data has genuine signal:
 
-| Component | Sub-criteria | Weight | What earns top marks |
-|-----------|--------------|:------:|----------------------|
-| **Pitching Problem, Solution & Results** *(12% total)* | Slide Organization & Visuals | **4%** | Within slide limit; clear, well-organized slides; informative visuals with explanation |
-| | Presentation Delivery & Preparedness | **4%** | Strictly on time; clear, confident, engaging; good eye contact / body language; **business attire** |
-| | Solution Alignment & Convincing Justification | **4%** | Addresses the stated problem; links outcomes to **business value**; convincing, evidence-backed justification |
-| **Response to Case & Questions** | Solution Comparison & Technical Justification | **8%** | Insightful, critical comparison of solution vs alternatives; clear, technically accurate justification |
+| Strong positive | r | Strong negative | r |
+|---|---|---|---|
+| Schooling | +0.75 | Adult Mortality | −0.70 |
+| Income composition | +0.72 | HIV/AIDS | −0.56 |
+| BMI | +0.57 | thinness 1-19 years | −0.48 |
+| Diphtheria / Polio | +0.48 / +0.47 | under-five deaths | −0.22 |
+| GDP | +0.46 | Measles | −0.16 |
 
-> **Gen AI:** You may use Gen AI to generate ideas and prepare your pitch, but **do not** paste exact results unverified — verify all code, suggestions, and explanations; you are responsible for your own work. Cite any Gen AI use in your Declaration of Originality. See the ChatGPT Playbook (Student Edition) in TP-LMS.
->
-> **Plagiarism** is reported and awarded **zero marks**, with further penalties up to dismissal. If two or more students are involved, the **same penalty applies to all** — including whoever allowed their work to be copied.
+Education, income and immunisation raise life expectancy; mortality, HIV/AIDS and malnutrition lower it.
 
 ---
 
-## 6. GitHub Workflow
+## 4. How It Was Built — The Process
 
-You will use Git to track your work. Your commit history is **graded** under *Version Control / Development Logs (4%)* and provides a backup of your work, so commit and push **regularly**.
+The project follows the **CRISP-DM** workflow, mirrored in the notebook structure:
 
-> 🔴 **Work only on YOUR OWN branch. Never push to `master`.**
-> Everyone shares this one repository. If you push to `master`, you will overwrite the shared branch and clash with your classmates' work. Create a branch named after yourself (e.g. your Student ID) and keep **all** your work there. Marks come from *your* branch — pushing to the wrong place means your work may not be graded and may disrupt others.
+1. **Business Understanding** — define the problem as regression.
+2. **Data Understanding** — load, inspect types, count missing values, describe, and visualise (target distribution, feature distributions, correlation heatmap).
+3. **Data Preparation** — clean, encode, split (70 % train / 30 % test, `random_state = 2026`).
+4. **Modelling** — train four models, then tune the best.
+5. **Model Evaluation** — compare with error metrics, justify the choice.
+6. **Iterative Model Development** — improve the model in cycles, each tested as a hypothesis.
 
-### 6.1 Clone the repository (one-time setup)
+Everything uses **scikit-learn only** for the models (as required), plus pandas / numpy / matplotlib / seaborn for data handling and visualisation, and joblib to save the model.
+
+### Choice of evaluation metric
+
+Because this is regression, the models are judged on **error metrics in the same unit as the target (years)**:
+
+- **MAE (Mean Absolute Error)** — the headline metric. "On average the prediction is off by X years" — easy for a stakeholder to understand.
+- **RMSE (Root Mean Squared Error)** — supporting metric; squares errors so it penalises large mistakes more.
+- **MSE** — reported for completeness.
+
+**R² was deliberately not used.** It is a relative score rather than an error in the target's unit, it can be inflated simply by adding features, and a high R² can hide large individual errors. MAE and RMSE give a more honest picture of how many years off the model is.
+
+---
+
+## 5. The Models & Why Random Forest
+
+Four regression models were trained on the basic features and compared:
+
+![Model comparison](images/model_comparison.png)
+
+| Model | MAE | RMSE | Verdict |
+|---|---|---|---|
+| Linear Regression | 2.812 | 3.656 | Weakest — assumes linear relationships |
+| Decision Tree | 1.523 | 2.525 | Overfits a single tree |
+| **Random Forest** | **1.128** | **1.848** | **Best — chosen** |
+| Gradient Boosting | 1.503 | 2.155 | Good, but behind RF here |
+
+**Why Random Forest and not the others:**
+
+- **vs Linear Regression** — life expectancy does not vary linearly with skewed features like GDP and HIV/AIDS, so a linear model underfits badly (MAE more than double RF's).
+- **vs a single Decision Tree** — one tree memorises the training data and generalises poorly; a *forest* averages many trees and is far more stable.
+- **vs Gradient Boosting** — competitive, but on this dataset Random Forest gave lower error out of the box and was less sensitive to settings.
+
+Random Forest also brings two practical advantages that suited this data: it is **invariant to feature scale** (so GDP in the thousands and Schooling in single digits need no standardisation), and it is **robust to skew and outliers** because it splits on thresholds rather than distances.
+
+---
+
+## 6. Hyperparameter Tuning
+
+Per the brief, tuning uses **`RandomizedSearchCV` only**, with **no more than 3 values per hyperparameter**:
+
+```python
+param_dist_rfr = {
+    'n_estimators':      [50, 100, 150],
+    'max_depth':         [10, 20, 30],
+    'min_samples_split': [2, 5, 10]
+}
+```
+
+Settings: `n_iter = 6`, `cv = 3`, `scoring = 'neg_mean_absolute_error'`. Each search therefore trains **6 × 3 = 18 models**, plus a final refit — and tuning is run **in every cycle** (baseline, Iteration 1, Iteration 2) so comparisons are fair.
+
+**Best parameters found (consistently):** `n_estimators = 100`, `max_depth = 20`, `min_samples_split = 2`.
+
+A key finding: **tuning barely changed the baseline** (MAE 1.128 → 1.126). This was informative — it showed the model was already near its ceiling for the given features, so the real gains would have to come from **improving the data**, not the settings. That insight is what motivated the iterations.
+
+---
+
+## 7. The Iterations / Cycles In Detail
+
+The model was improved in cycles, each framed as a **hypothesis**: make one change, retrain, compare, and keep it only if it helps.
+
+### Cycle 1 — Baseline
+Drop only `Country`, drop rows with any missing value, train four models, tune the best.
+**Result:** Random Forest, **MAE 1.13 / RMSE 1.85** on 1,649 rows. This is the benchmark.
+
+### Iteration 1 — Imputation + Feature Engineering
+The most valuable step.
+- **Imputation instead of dropping** — missing feature values are filled with the column median rather than deleting the whole row, recovering ~1,300 rows (**1,649 → 2,928**).
+- **Feature engineering** — `Immunization avg = (Polio + Diphtheria) / 2`, combining two correlated vaccine columns into one clean "immunisation coverage" feature.
+- **Redundancy removal** — dropped `infant deaths` (near-duplicate of `under-five deaths`) and `thinness 5-9 years` (near-duplicate of `thinness 1-19 years`).
+
+**Result:** **MAE 1.16 / RMSE 1.81**. Even though the test set is now larger and harder, RMSE falls slightly, and — most importantly — the model learns from far more of the world's countries, making it more robust.
+
+### Iteration 2 — Feature Importance + Selection
+
+![Feature importance](images/feature_importance.png)
+
+Feature importance shows the prediction is dominated by a handful of features. Keeping only those that make up **90 % of total importance** leaves just **4 features**: `HIV/AIDS`, `Adult Mortality`, `Income composition of resources`, `under-five deaths`.
+**Result:** **MAE 1.28 / RMSE 1.93** — tested on the *same rows* as Iteration 1, so this is a fair, direct comparison. It is **worse** than the full model, which proves the remaining features still add value.
+
+### Summary of every model
+
+| Stage | Rows | MAE | RMSE |
+|---|---|---|---|
+| Baseline – Linear Regression | 1,649 | 2.812 | 3.656 |
+| Baseline – Decision Tree | 1,649 | 1.523 | 2.525 |
+| Baseline – Random Forest | 1,649 | 1.128 | 1.848 |
+| Baseline – Gradient Boosting | 1,649 | 1.503 | 2.155 |
+| Baseline – Random Forest (tuned) | 1,649 | 1.126 | 1.850 |
+| Iteration 1 – Random Forest (tuned) | 2,928 | **1.160** | **1.811** ← final |
+| Iteration 2 – Random Forest (selected, tuned) | 2,928 | 1.281 | 1.934 |
+
+**Final model:** Iteration 1's tuned Random Forest (all 14 engineered features), saved for the app.
+
+---
+
+## 8. What Was Tried That Failed — and Why
+
+Being honest about the dead ends is part of the process, and each one taught something.
+
+**A synthetic dataset (rejected before it began).** The first dataset explored was a "healthcare patient analytics" file. EDA exposed it as **synthetic**: every numeric feature had ~0 correlation with the target, the timestamps were perfectly hourly and sequential, and categories were suspiciously uniform. A model on it could not beat predicting the mean. Because the brief forbids synthetic data, it was abandoned — a lesson in **always validating that data has real signal before modelling.**
+
+**A diabetes length-of-stay dataset (considered, set aside).** A real UCI hospital dataset was a strong candidate, but it was too close to a classification lab already completed, so a more distinctive regression problem (life expectancy) was chosen.
+
+**Removing outliers (tested, rejected).** A hypothesis that the extreme `GDP` and `HIV/AIDS` values were harming the model was tested with the IQR rule. It **deleted ~650 valid rows and made the model worse** — the "outliers" were genuine countries (very wealthy nations, high-HIV nations), not errors. The change was rejected and the outliers kept. Lesson: **not every anomaly is an error.**
+
+**Feature selection to 90 % importance (tested, rejected).** Iteration 2 showed a 4-feature model does not beat the full 14-feature model, so the smaller features were retained.
+
+**What was learnt overall:**
+- Data quality matters more than model tuning — the biggest gain came from *keeping more data* via imputation, not from hyperparameters.
+- Metrics must be compared fairly — changing the row count makes MAE/RMSE non-comparable across those stages, which is why the fair comparisons were done on fixed row sets.
+- A simple, well-understood model (Random Forest) with good data beats a fancier model with poor data.
+
+---
+
+## 9. The Web App
+
+The model is deployed with **Streamlit** so a non-technical user can get a prediction without touching code. Two versions were built:
+
+**Version A — lab-style app.** A straightforward form: inputs, a *Predict* button, `get_dummies` + `reindex(model.feature_names_in_)`, and a result. Simple and reliable.
+
+**Version B — custom dashboard (final).** A restyled, unique interface:
+- Deep-navy gradient theme with custom Google fonts and a glowing result card.
+- All inputs in a **sidebar**; the Streamlit top bar / Deploy button hidden via CSS.
+- Live **data graphs** (feature importance, target distribution, schooling-vs-life-expectancy) drawn from the training data.
+- A **saved-scenarios table** with a **Download CSV** button, so a user can test several country profiles and export them.
+
+**Benefits of Version B over A:** it looks distinct and professional (not a template clone), it *teaches* the user via the graphs, and the scenario export makes it genuinely useful rather than a one-off calculator. The trade-off is more code and a small extra dependency (matplotlib). Version B is the one shipped.
+
+The app loads a single artifact, `life_expectancy_model.pkl`, and reads the feature order directly from `model.feature_names_in_`, so no separate feature-list file is needed.
+
+---
+
+## 10. Notebook Structure
+
+The notebook mirrors CRISP-DM and is fully reproducible (Restart → Run All):
+
+```
+Declaration of Originality
+Libraries
+Setup (shared settings + reusable evaluate function)
+1. Business Understanding
+2. Data Understanding      (load, info, missing-value check, describe, EDA plots)
+3. Data Preparation        (3.1 Cleaning, Feature Dictionary, 3.2 Train-Test Split)
+4. Modelling               (4.1 Train Model, 4.2 Hyperparameter Tuning)
+5. Model Evaluation        (metric justification, baseline observation, unseen-data demo)
+Iterative model development (Iteration 1, Iteration 2, Summary, Overall Summary)
+Conclusion
+Save final model
+```
+
+Each cycle **reloads the raw data and redoes its own cleaning**, so every stage is self-contained and can be re-run independently without state bugs. A reusable `evaluate()` function keeps metric reporting consistent and collects every result into a final summary table.
+
+---
+
+## 11. Limitations
+
+**Of the data / model:**
+- **Aggregate data.** Rows are country-year averages, so the model predicts national life expectancy, not an individual's.
+- **Bounded target & era.** Data covers 2000–2015; predictions for very different years or unusual countries are extrapolation.
+- **Imputation introduces assumptions.** Median-filling missing values keeps more data but assumes those countries are "typical" for that feature.
+- **Correlation ≠ causation.** Some positive signs (e.g. alcohol, BMI) reflect national wealth, not a causal benefit; the model should not be read as policy advice on those.
+- **Marginal iteration gains.** The dataset is "easy" enough that Random Forest is near its ceiling early, so improvements are small — the value is in robustness and process, not a dramatic score jump.
+
+**Of building / running the notebook:**
+- Column names contain stray whitespace that must be stripped first, or lookups fail.
+- Notebook cells share memory, so cells must be run **in order** (Restart → Run All) — re-running a cleaning cell out of order caused `KeyError`/state bugs during development.
+- `RandomizedSearchCV` in three cycles makes a full run take a couple of minutes.
+- Cross-stage metric comparison is not straightforward when imputation changes the row count — this had to be handled carefully rather than comparing numbers blindly.
+
+---
+
+## 12. Repository Contents
+
+| File | Purpose |
+|---|---|
+| `MLDP Program Codes Submission Template.ipynb` | Full notebook (EDA → modelling → iterations) |
+| `app.py` | Streamlit web app |
+| `life_expectancy_model.pkl` | Saved final Random Forest model |
+| `Life Expectancy Data.csv` | Dataset |
+| `requirements.txt` | App dependencies |
+| `images/` | Charts used in this README |
+
+**Run the app locally:**
 ```bash
-git clone https://github.com/alvin-ps-tan/MLDP-C25U02-Apr2026.git
-cd MLDP-C25U02-Apr2026
-```
-
-### 6.2 Create and switch to your own local branch
-Name your branch with your Student ID (or name) so it is unique and easy to identify.
-```bash
-# Create a new branch and switch to it in one step
-git checkout -b 2401234A
-
-# Confirm which branch you are on (the * marks the current branch)
-git branch
-```
-> If your branch already exists on GitHub, switch to it instead: `git checkout 2401234A`
-
-### 6.3 Stage & commit your work (with good commit messages)
-Stage the files you changed, then commit. Write **concise, descriptive** messages. Use the convention **`YYYY-MM-DD_majorchange`** so each commit is dated and states the major change.
-
-```bash
-# See what changed
-git status
-
-# Stage specific files (preferred) ...
-git add notebook.ipynb app.py
-
-# ... or stage everything that changed
-git add .
-
-# Commit with a dated, descriptive message
-git commit -m "2026-06-30_added EDA and correlation heatmap"
-```
-
-**Good commit messages** (concise, dated, one major change each):
-```
-2026-07-02_cleaned data and handled missing values
-2026-07-05_added baseline logistic regression model
-2026-07-08_feature engineering: encoded categoricals, scaled numerics
-2026-07-11_tuned random forest with RandomizedSearchCV
-2026-07-15_built streamlit app with prediction form
-```
-**Avoid** vague messages like `update`, `changes`, `final`, `asdf`.
-
-### 6.4 Push to YOUR remote branch
-The **first** push creates your branch on GitHub and links it (`-u`). After that, a plain `git push` is enough.
-```bash
-# First push for this branch (creates it on GitHub):
-git push -u origin 2401234A
-
-# Every push afterwards:
-git push
-```
-> ✅ Double-check you are pushing to **your** branch, not `master`. After pushing, open the repo on GitHub and confirm your commits appear under **your** branch.
-
-### 6.5 Push regularly — at the end of every major change
-**Do not wait until the deadline to push.** Commit and push at the end of **every major change** — after EDA, after a model, after feature engineering, after tuning, after the app, etc.
-
-Pushing regularly:
-- **backs up your work** off your laptop (laptop failure is *not* a valid excuse for late submission);
-- builds the **commit history** that is graded for *iterative development*;
-- lets your tutor see your progress at checkpoints;
-- means you never lose more than your last small change.
-
-A typical day's cycle:
-```bash
-git add .
-git commit -m "2026-07-09_<the major change you just finished>"
-git push
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
 ---
 
-## 7. Quick Checklist
+## 13. Results at a Glance
 
-- [ ] Dataset approved by tutor at Checkpoint 1 (public, ≥ 200 rows, supervised, not synthetic, not text/image/pure time-series)
-- [ ] Jupyter notebook: EDA, ≥ 2 models vs baseline, feature engineering, `RandomizedSearchCV` tuning, justified metric — all documented
-- [ ] Streamlit app deployed, interactive, error-handled
-- [ ] Word document: Declaration of Originality, dataset source, **GitHub link**, **Streamlit link**, 3 screenshots
-- [ ] Slides (≤ 10) prepared; pitch rehearsed to ≤ 3 minutes; business attire ready
-- [ ] All work committed and pushed to **your own branch** — and you verified it on GitHub
-- [ ] Final `.zip` named `<TP-LMS Name>_<Student ID>.zip`, submitted to TP-LMS **before** the deadline
+- **Final model:** tuned Random Forest, 14 engineered features.
+- **Accuracy:** **MAE ≈ 1.16 years**, **RMSE ≈ 1.81 years** on held-out test data.
+- **Interpretation:** for a target spanning roughly 40–90 years, being off by about one year is a strong, business-usable result.
+- **Top drivers:** Income composition, HIV/AIDS, Adult Mortality, Schooling.
+- **Biggest lesson:** imputing missing data (keeping ~1,300 more rows) mattered more than any hyperparameter.
